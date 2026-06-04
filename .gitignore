@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# 🔴 密钥 / 个人配置 —— 绝不提交（用对应的 *.example.json 代替）
+config/amap_config.json
+agent/models.json
+
+# 运行时 / 个人数据 —— 含真实偏好、历史、日程，用 *.example.json 演示
+config/history.json
+config/session_state.json
+config/preferences.json
+config/calendar.json
+
+# OpenClaw 运行时
+.openclaw/
+*.log
+backups/

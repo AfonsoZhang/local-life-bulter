@@ -1,0 +1,15 @@
+{
+  "user_preferences": {
+    "cuisine_preferences": ["火锅", "日料", "湘菜"],
+    "budget_level": "medium",
+    "preferred_transport": ["subway", "taxi"],
+    "interests": ["电影", "展览", "户外"],
+    "companion_default": "solo",
+    "default_city": "示例城市",
+    "default_location": "示例商圈",
+    "default_center": "120.000000,30.000000",
+    "location_source": "demo",
+    "location_history": [{"city": "示例城市", "location": "示例商圈"}]
+  },
+  "learned": {"negative_feedback": {"rejected_food_tags": {}, "rejected_keywords": {}}}
+}
