@@ -16,3 +16,7 @@ config/calendar.json
 .openclaw/
 *.log
 backups/
+
+# 旧污染 git 备份，绝不提交
+.git.contaminated.bak/
+*.contaminated.bak/
