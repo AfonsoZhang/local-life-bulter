@@ -23,3 +23,7 @@ backups/
 
 # Claude Code 开发笔记，与提交无关
 CLAUDE.md
+
+# 空模板/运行时占位，非提交物
+USER.md
+HEARTBEAT.md
