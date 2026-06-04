@@ -1,0 +1,73 @@
+{
+  "reviews": [
+    {
+      "venue": "老济南烧烤",
+      "comment": "不错，就是有点咸，环境挺干净的",
+      "skill": "food-finder",
+      "sentiment": "positive",
+      "score": 4.5,
+      "matched_keywords": [
+        "+干净",
+        "+不错",
+        "-咸"
+      ],
+      "attributes": {
+        "taste": "negative",
+        "environment": "negative"
+      },
+      "tags": [
+        "咸",
+        "干净"
+      ],
+      "booking_id": "",
+      "created_at": "2026-05-31T19:38:28.579581"
+    },
+    {
+      "venue": "某火锅店",
+      "comment": "太辣了受不了，排队排了半小时",
+      "skill": "food-finder",
+      "sentiment": "negative",
+      "score": 2.0,
+      "matched_keywords": [
+        "-排队",
+        "-辣"
+      ],
+      "attributes": {
+        "taste": "negative",
+        "wait": "negative"
+      },
+      "tags": [
+        "辣",
+        "排队"
+      ],
+      "booking_id": "",
+      "created_at": "2026-05-31T19:38:28.641458"
+    },
+    {
+      "venue": "泉城大酒店",
+      "comment": "菜品新鲜地道，服务热情，性价比高，下次还来",
+      "skill": "food-finder",
+      "sentiment": "positive",
+      "score": 5.0,
+      "matched_keywords": [
+        "+新鲜",
+        "+地道",
+        "+下次还来",
+        "+热情",
+        "+性价比高"
+      ],
+      "attributes": {
+        "taste": "positive",
+        "service": "positive",
+        "price": "positive"
+      },
+      "tags": [
+        "新鲜",
+        "性价比",
+        "地道"
+      ],
+      "booking_id": "BK0531F3FB",
+      "created_at": "2026-05-31T19:47:33.595008"
+    }
+  ]
+}
