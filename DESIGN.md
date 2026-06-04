@@ -8,14 +8,16 @@
 ┌─────────────────────────────────────────────┐
 │            IM 层（微信 / Telegram）           │
 ├─────────────────────────────────────────────┤
-│            Agent 层（SOUL.md）               │
-│   人格定义 · 行为约束 · 交互风格 · 安全边界    │
+│       Agent 层（SOUL / AGENTS / TOOLS）       │
+│   行为约束 · 防幻觉硬约束 · 交互范式 · 工具目录 │
 ├─────────────────────────────────────────────┤
-│            技能层（Skills）                   │
-│   food-finder · travel-planner · entertainment · calendar │
+│            技能层（7 个 Skills）              │
+│  food-finder · travel-planner · entertainment │
+│  booking · review · calendar · scheduler      │
 ├─────────────────────────────────────────────┤
 │            核心层（Core）                     │
-│   amap_api · cal_manager · memory · weather  │
+│  amap_api · memory · scheduler · date_resolver │
+│  location_cli · cal_manager · weather · formatter │
 ├─────────────────────────────────────────────┤
 │            数据层（Config）                   │
 │   calendar.json · preferences.json · history.json │
