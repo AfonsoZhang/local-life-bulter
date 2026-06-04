@@ -1,0 +1,97 @@
+{
+  "_comment": "OpenClaw Cron 注册示例 —— 全天候私人管家的主动定时服务。使用前把 <WORKSPACE> 换成实际工作区路径，把 delivery.to / accountId 换成你的 IM 账号。所有任务通过 exec 调用 broadcast.py / calendar_cli.py，脚本有输出才发消息（mode=none 由 agent 判断；mode=announce 一定发）。",
+  "version": 1,
+  "jobs": [
+    {
+      "name": "日程提醒",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 9-23 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python <WORKSPACE>/local-life-butler/skills/calendar/scripts/calendar_cli.py list --days 1。若有即将到来的日程，用 message 工具把事件标题/时间/地点发到微信；没有则结束不发。",
+        "timeoutSeconds": 180
+      },
+      "delivery": { "mode": "none", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    },
+    {
+      "name": "天气突变预警",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 10,12,14,16,18,20,22,0 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python3 <WORKSPACE>/local-life-butler/skills/calendar/scripts/broadcast.py alert。命令有输出（天气异常）则原样发到微信；无输出则结束不发。",
+        "timeoutSeconds": 180
+      },
+      "delivery": { "mode": "none", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    },
+    {
+      "name": "早安播报",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 9 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python3 <WORKSPACE>/local-life-butler/skills/calendar/scripts/broadcast.py morning。把输出原样发给用户（天气+今日日程+今日待办提醒）。",
+        "timeoutSeconds": 180
+      },
+      "delivery": { "mode": "announce", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    },
+    {
+      "name": "晚安播报",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 0 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python3 <WORKSPACE>/local-life-butler/skills/calendar/scripts/broadcast.py evening。把输出原样发给用户（明日天气+当日日程）。",
+        "timeoutSeconds": 60
+      },
+      "delivery": { "mode": "announce", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    },
+    {
+      "name": "预订到店提醒",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 10-22 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python3 <WORKSPACE>/local-life-butler/skills/calendar/scripts/broadcast.py booking。有输出（2小时内有预订）则原样发到微信；无输出则结束不发。",
+        "timeoutSeconds": 120
+      },
+      "delivery": { "mode": "none", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    },
+    {
+      "name": "评价邀请提醒",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 20 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python3 <WORKSPACE>/local-life-butler/skills/calendar/scripts/broadcast.py review。有输出（有待评价的体验）则原样发到微信；无输出则结束不发。",
+        "timeoutSeconds": 120
+      },
+      "delivery": { "mode": "none", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    },
+    {
+      "name": "天气-日程冲突检测",
+      "enabled": true,
+      "schedule": { "kind": "cron", "expr": "0 8,11,14,17 * * *", "tz": "Asia/Shanghai" },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "用 exec 运行：python3 <WORKSPACE>/local-life-butler/skills/calendar/scripts/broadcast.py weather-check。有输出（恶劣天气+户外日程冲突）则原样发到微信；无输出则结束不发。",
+        "timeoutSeconds": 120
+      },
+      "delivery": { "mode": "none", "channel": "openclaw-weixin", "to": "<YOUR_WECHAT_OPENID>@im.wechat", "accountId": "<YOUR_IM_BOT_ID>" }
+    }
+  ]
+}
