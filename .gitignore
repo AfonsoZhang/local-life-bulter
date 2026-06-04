@@ -20,3 +20,6 @@ backups/
 # 旧污染 git 备份，绝不提交
 .git.contaminated.bak/
 *.contaminated.bak/
+
+# Claude Code 开发笔记，与提交无关
+CLAUDE.md
