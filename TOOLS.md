@@ -65,8 +65,8 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 ### core/location_cli.py（对话式默认地址）
 - `status [--json]` — 查看当前位置 + 来源（confirmed/ip_guess/default）
 - `bootstrap [--force]` — 首次 IP 定位猜测（不覆盖已确认位置）
-- `confirm "我在武林广场"` — 用户确认/修正 → 标记 confirmed
-- `confirm --city 杭州 --location 武林广场` — 直接指定
+- `confirm "我在和谐广场"` — 用户确认/修正 → 标记 confirmed
+- `confirm --city 济南 --location 和谐广场` — 直接指定
 - ⚠️ ip_guess 是猜测，禁止当事实陈述，必须反问确认（详见 AGENTS.md「默认地址」）
 
 ### core/amap_api.py
