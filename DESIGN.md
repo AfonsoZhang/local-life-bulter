@@ -128,16 +128,16 @@ Flask Dashboard 展示工具编排逻辑，每个场景可视化展示管家如�
 
 ## 技能联动
 
-三个生活技能通过**区域（zone）** 关联，实现智能串联：
+联动由 **Echo（OpenClaw agent）** 在对话中编排：理解意图 → 调用相关技能搜候选 → 串联结果，多地点行程再交给 `scheduler` 排成时间线。各技能共享 `core/memory.py` 的偏好（美食偏好会影响娱乐推荐）。
 
 ```
 "看完电影吃什么"    → entertainment + food-finder（同区域推荐）
-"周末带孩子出去玩"  → entertainment + food-finder（时间线 + 预算）
+"周末带孩子出去玩"  → entertainment + food-finder + scheduler（时间线 + 预算）
 "去西湖有什么好玩的" → travel-planner + entertainment + food-finder
-"约会安排"         → entertainment + food-finder（情侣场景偏好）
+"约会安排"         → entertainment + food-finder + booking（情侣场景偏好）
 ```
 
-意图路由器从自然语言中识别涉及哪些技能、串联顺序、场景上下文（同行人、时段、预算），联动引擎按区域就近匹配并生成完整方案。
+交易闭环：选定后可衔接 `booking`（预订 + 模拟支付）→ `calendar`（写日程）→ `review`（评价反哺偏好）。
 
 ## 对话式交易闭环
 
@@ -191,33 +191,38 @@ Flask Dashboard 展示工具编排逻辑，每个场景可视化展示管家如�
 
 ```
 local-life-butler/
-├── DESIGN.md              # 本文件 — 项目设计文档
 ├── README.md              # 项目说明 + 快速开始
-├── core/
+├── DESIGN.md              # 项目设计文档（本文件）
+├── SOUL.md                # 行为约束（防幻觉/选项式/默认地址）
+├── AGENTS.md              # 操作规范（微信格式/衔接）
+├── TOOLS.md               # 工具目录
+├── INTERACTION-PATTERN.md # 选项式交互范式
+├── core/                  # 共享模块（纯工具/算法，不含 LLM）
 │   ├── amap_api.py        # 高德地图 API 统一封装
-│   ├── cal_manager.py     # 日程管理（自建日历 + iCal）
 │   ├── memory.py          # 偏好学习 + 交互历史
-│   ├── formatter.py       # 结构化消息格式化（卡片式输出）
-│   ├── weather.py         # 天气获取
-│   ├── time_utils.py      # 时间感知工具
-│   ├── chains.py          # 技能联动引擎
-│   ├── router.py          # 意图路由器
-│   ├── scheduler.py       # 智能排期器
-│   └── tools.py           # 参数化工具注册
-├── skills/
-│   ├── calendar/          # 日历技能（播报 + 提醒）
+│   ├── scheduler.py       # 智能排期算法
+│   ├── schemas.py         # 统一数据模型
+│   ├── date_resolver.py   # 日期解析（防推算幻觉）
+│   ├── location_cli.py    # 对话式默认地址
+│   ├── cal_manager.py     # 日程管理（自建日历 + iCal）
+│   ├── weather.py         # 天气（高德 + wttr.in fallback）
+│   ├── time_utils.py      # 时间感知
+│   ├── formatter.py       # 卡片式消息格式化
+│   └── wiki_image.py      # 维基图片辅助
+├── skills/                # 7 个技能（SKILL.md + 实现代码）
 │   ├── food-finder/       # 美食推荐
 │   ├── travel-planner/    # 出行规划
 │   ├── entertainment/     # 休闲娱乐
-│   ├── booking/           # 对话式预订（预订 + 支付 + 日程联动）
-│   └── review/            # 对话式评价（情感分析 + 偏好更新）
+│   ├── calendar/          # 日程管理 + 播报
+│   ├── booking/           # 对话式预订（预订 + 模拟支付 + 日程联动）
+│   ├── review/            # 对话式评价（情感分析 + 偏好更新）
+│   └── scheduler/         # 智能行程编排
+├── cron/
+│   └── jobs.example.json  # 全天候定时服务注册示例（脱敏）
 ├── dashboard/
 │   └── app.py             # Flask 可视化面板
-└── config/
-    ├── amap_config.json   # 高德 API Key
-    ├── calendar.json      # 日程数据
-    ├── preferences.json   # 用户偏好
-    └── history.json       # 交互历史
+└── config/                # 全部为模拟数据
+    └── *.example.json     # 示例配置（真实运行数据 gitignore 不入库）
 ```
 
 ## 技术栈
