@@ -331,7 +331,7 @@ def generate_alert():
 
 BOOKING_CLI = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "skills", "booking", "scripts", "booking_cli.py",
+    "booking", "scripts", "booking_cli.py",
 )
 
 
