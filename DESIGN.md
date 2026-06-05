@@ -128,12 +128,12 @@ Flask Dashboard 展示工具编排逻辑，每个场景可视化展示管家如�
 
 ## 技能联动
 
-联动由 **Echo（OpenClaw agent）** 在对话中编排：理解意图 → 调用相关技能搜候选 → 串联结果，多地点行程再交给 `scheduler` 排成时间线。各技能共享 `core/memory.py` 的偏好（美食偏好会影响娱乐推荐）。
+联动由 **管家（基于 OpenClaw agent）** 在对话中编排：理解意图 → 调用相关技能搜候选 → 串联结果，多地点行程再交给 `scheduler` 排成时间线。各技能共享 `core/memory.py` 的偏好（美食偏好会影响娱乐推荐）。
 
 ```
 "看完电影吃什么"    → entertainment + food-finder（同区域推荐）
 "周末带孩子出去玩"  → entertainment + food-finder + scheduler（时间线 + 预算）
-"去西湖有什么好玩的" → travel-planner + entertainment + food-finder
+"去趵突泉有什么好玩的" → travel-planner + entertainment + food-finder
 "约会安排"         → entertainment + food-finder + booking（情侣场景偏好）
 ```
 
@@ -236,4 +236,4 @@ local-life-butler/
 
 ---
 
-> 🔊 Echo — 你说，我听，我回应。
+> 🔊 全天候私人管家 — 你说，我听，我回应。

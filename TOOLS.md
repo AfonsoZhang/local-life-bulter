@@ -55,8 +55,8 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 ### skills/scheduler/scripts/schedule_cli.py（智能行程编排）
 - 把候选活动+餐厅排成最优时间线（出行矩阵+贪心排序+自动塞午晚餐+预算），纯算法不含 LLM
-- 算法在 `core/scheduler.py` + `core/schemas.py`，本脚本是 Echo 可调入口
-- `echo '<json>' | python3 skills/scheduler/scripts/schedule_cli.py --input -` — 从 stdin 读（Echo 常用）
+- 算法在 `core/scheduler.py` + `core/schemas.py`，本脚本是 管家 可调入口
+- `echo '<json>' | python3 skills/scheduler/scripts/schedule_cli.py --input -` — 从 stdin 读（管家 常用）
 - `python3 skills/scheduler/scripts/schedule_cli.py --input plan.json` / `--demo`
 - 加 `--json` 输出结构化结果
 - 输入 JSON：`{events:[{name,type,location:"lng,lat",duration_min,price_yuan,rating}], lunch:[...], dinner:[...], start_hour}`
