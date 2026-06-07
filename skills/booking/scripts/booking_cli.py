@@ -243,6 +243,32 @@ def get_reminders() -> List[Dict]:
     return sorted(upcoming, key=lambda b: b.get("minutes_until", 999))
 
 
+def auto_complete_past_bookings() -> List[Dict]:
+    """自动标记已过时间的预订为已完成（预订时间超过30分钟后）"""
+    now = datetime.now()
+    data = _load_bookings()
+    auto_completed = []
+
+    for b in data.get("bookings", []):
+        if b.get("status") not in ("confirmed", "paid"):
+            continue
+        try:
+            booking_dt = datetime.strptime(f"{b['date']} {b['time']}", "%Y-%m-%d %H:%M")
+            # 预订时间过了30分钟后自动标记完成
+            if now > booking_dt + timedelta(minutes=30):
+                b["status"] = "completed"
+                b["completed_at"] = now.isoformat()
+                b["auto_completed"] = True
+                auto_completed.append(b)
+        except (ValueError, KeyError):
+            continue
+
+    if auto_completed:
+        _save_bookings(data)
+
+    return auto_completed
+
+
 def get_completed_without_review() -> List[Dict]:
     """获取已完成但未评价的预订"""
     data = _load_bookings()

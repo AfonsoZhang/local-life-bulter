@@ -26,6 +26,10 @@ metadata: {"openclaw":{"emoji":"📅","requires":{"bins":["python3"]}}}
 
 **原因：** 模型在转述事实数据时会产生幻觉（hallucination），尤其是日期、星期、数字。沿用原文可以彻底消除这类错误。
 
+### 微信 emoji 约束
+禁止输出带数字的 emoji：❌ 📆 🔢
+日程/时间统一用：✅ 📅 📋 🕐 ⏰ 📌
+
 ## ⚠️ 日期解析 fallback（硬约束）
 用户提到的自然语言日期必须经过 `date_resolver.resolve_date()` 或 `cal_manager` 内部调用链解析。
 - **解析成功** → 用返回的 ISO 日期继续流程

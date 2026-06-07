@@ -100,3 +100,4 @@ python {baseDir}/../core/wiki_image.py "<景点名称>"
 ## Constraints
 - 所有活动数据来自模拟数据集
 - 不收集任何真实用户信息
+- **微信 emoji 约束：** 禁止 📆 🔢（带数字），日程/时间统一用 📅 📋 🕐 ⏰ 📌

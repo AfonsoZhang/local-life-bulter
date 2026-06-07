@@ -343,7 +343,9 @@ def generate_booking_reminder():
     import subprocess
     try:
         sys.path.insert(0, os.path.dirname(BOOKING_CLI))
-        from booking_cli import get_reminders
+        from booking_cli import get_reminders, auto_complete_past_bookings
+        # 先自动标记已过时间的预订为已完成
+        auto_complete_past_bookings()
         reminders = get_reminders()
     except (ImportError, Exception):
         return ""
@@ -404,8 +406,12 @@ def generate_review_prompt():
 OUTDOOR_KEYWORDS = [
     "户外", "露天", "跑步", "骑行", "爬山", "登山", "徒步", "野餐",
     "公园", "游泳", "钓鱼", "烧烤", "露营", "景区", "游乐",
-    "散步", "遛弯", "运动", "球", "广场", "写生", "赏花", "采摘",
+    "散步", "遛弯", "运动", "球", "写生", "赏花", "采摘",
 ]
+
+# 商场/购物中心名称中的"广场"不算户外
+MALL_PATTERNS = ["和谐广场", "万达广场", "银座广场", "恒隆广场", "印象城",
+                 "大悦城", "吾悦广场", "龙湖广场", "华润广场", "凯德广场"]
 
 
 def generate_weather_conflict():
@@ -438,7 +444,11 @@ def generate_weather_conflict():
         title = e.get("title", "").lower()
         location = e.get("location", "").lower()
         combined = title + " " + location
-        if any(kw in combined for kw in OUTDOOR_KEYWORDS):
+        # 剔除商场名称，避免"和谐广场""万达广场"等被误判为户外
+        cleaned = combined
+        for mall in MALL_PATTERNS:
+            cleaned = cleaned.replace(mall.lower(), "")
+        if any(kw in cleaned for kw in OUTDOOR_KEYWORDS):
             outdoor_events.append(e)
 
     if not outdoor_events:
