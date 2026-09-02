@@ -123,28 +123,6 @@ local-life-butler/
     └── session_state.json # 多轮对话上下文
 ```
 
-## 🚦 技能规范与闸门
-
-7 个 SKILL.md 是管家唯一的操作依据——它写错一条命令，管家就会照错的调一整轮。所以规范不靠自觉，靠一道机械闸门 `tools/check_skills.py`（纯静态校验，不调模型）：
-
-| 规则 | 拦什么 |
-|---|---|
-| R1 | frontmatter 完整、`name` 与目录一致、`metadata` 是合法 JSON |
-| R2 | `description` 必须写明触发场景——它是唯一常驻上下文的部分，正文命中后才加载 |
-| R3 | 必须有硬约束段和「坑与降级」段 |
-| R4/R5 | **文档写的脚本必须存在，写的子命令和 `--flag` 必须真在脚本源码里** |
-| R6 | 不许引用不存在的技能 |
-| R7 | `AGENTS.md` 的路由收口层必须覆盖全部技能 |
-
-R4/R5 是核心：它抓的是文档与代码的漂移。上线时这道闸门当场抓出 3 处真实故障——两个技能的 `wiki_image.py` 路径少写一层（指向不存在的 `skills/core/`）、`plan_route.py` 的 `--time` 参数压根不存在（照文档跑直接 argparse 报错退出）。
-
-```bash
-python3 tools/check_skills.py     # 手动跑
-bash tools/install_hooks.sh       # 装成 pre-commit，提交前自动拦
-```
-
-CI 上同样跑（`.github/workflows/skills-gate.yml`），8 秒出结果。
-
 ## 🔗 交叉联动架构
 
 联动由 **管家（基于 OpenClaw agent）** 在对话中编排，不再依赖独立的规则引擎：
@@ -230,6 +208,17 @@ CI 上同样跑（`.github/workflows/skills-gate.yml`），8 秒出结果。
 **外部数据默认是实时的**：餐厅、活动、路线取高德地图接口，API 不可用时自动降级到本地示例数据集。每次返回都带 `data_source` 字段标明本次来源（`amap` / `mixed` / `mock`），格式化输出里也会直接印出来——mock 时管家必须声明是示例数据，不会把示例店说成真店。
 
 **预订与支付是模拟闭环**，不对接真实商户、不涉及真实交易。
+
+## 🚦 工程约束
+
+7 个 `SKILL.md` 是管家唯一的操作依据——写错一条命令，管家就会照着错的调一整轮。所以这套规范不靠自觉，由一道静态闸门 `tools/check_skills.py` 守着：`description` 必须写明触发场景（它是唯一常驻上下文的部分）、必须有硬约束与「坑与降级」段、**文档里写的脚本路径 / 子命令 / `--flag` 必须真实存在于源码**。最后一条抓的是文档与代码的漂移，上线当轮就抓出 3 处「照文档执行必然失败」的问题（两处脚本相对路径少一层、一个文档写了但脚本没有的 `--time`）。
+
+```bash
+python3 tools/check_skills.py     # 手动跑
+bash tools/install_hooks.sh       # 装成 pre-commit
+```
+
+CI 上同样跑（`.github/workflows/skills-gate.yml`）。
 
 ## 📝 技术栈
 
