@@ -1,6 +1,6 @@
 ---
 name: travel-planner
-description: 本地出行规划 - 综合时间、费用、天气推荐最优路线
+description: 点到点出行方案对比——步行/公交/地铁/打车的时间、费用、距离对比与推荐，默认取高德路径规划，失败降级本地示例数据。触发场景：① 用户提到怎么去、路线、打车、地铁、公交、导航、多久到、路上；② 用户嫌贵或赶时间要换一个方案。把多个地点排成一整天归 scheduler。
 metadata: {"openclaw":{"emoji":"🗺️","requires":{"bins":["python3"]}}}
 ---
 
@@ -12,10 +12,16 @@ metadata: {"openclaw":{"emoji":"🗺️","requires":{"bins":["python3"]}}}
 ## Trigger
 当用户提到：怎么去、路线、出行、打车、地铁、公交、导航、路上、交通等关键词时触发。
 
+## ⚠️ 数据真实性硬约束
+脚本**默认调高德实时数据**，失败才降级本地示例数据，返回体里的 `data_source` 就是这次数据的出处：
+- `amap` → 真实数据，可以直接当真店/真活动/真路线报给用户
+- `mock`（entertainment 还可能是 `mixed`，即两种混在一起）→ 含本地示例数据，**必须在回复里说明这是示例数据**，禁止说成「附近真有这家」
+名称、地址、价格、评分、营业时间、路线时间与费用**一律照抄脚本输出**：禁止自己编、禁止补全脚本没给的字段、禁止把数字润色成整数。搜不到就说搜不到，不要拿印象里的店名凑数。
+
 ## Input Parameters
 - `origin` (string): 出发地
 - `destination` (string): 目的地
-- `time` (string, optional): 出发时间或到达时间
+- `time`：**没有 --time 这个参数**，出发/到达时间随用户原话走 `--query` 传入
 - `mode` (string, optional): 出行方式偏好 (walk/bus/subway/taxi/drive)
 - `priority` (string, optional): 优先考虑 (cost/time/comfort)
 - `query` (string, optional): 自然语言查询（多轮对话用）
@@ -23,7 +29,7 @@ metadata: {"openclaw":{"emoji":"🗺️","requires":{"bins":["python3"]}}}
 ## Script
 ```bash
 # 出行规划
-python {baseDir}/scripts/plan_route.py --origin "<origin>" --destination "<destination>" --time "<time>" --mode "<mode>"
+python {baseDir}/scripts/plan_route.py --origin "<origin>" --destination "<destination>" --mode "<mode>" --query "<用户原话，含出发时间等>"
 
 # 按优先级排序
 python {baseDir}/scripts/plan_route.py --origin "<origin>" --destination "<destination>" --priority "cost"
@@ -35,7 +41,7 @@ python {baseDir}/scripts/plan_route.py --origin "<origin>" --destination "<desti
 python {baseDir}/scripts/plan_route.py --origin "x" --destination "y" --recall
 
 # 获取景点/目的地的 Wikipedia 图片和简介
-python {baseDir}/../core/wiki_image.py "<景点名称>"
+python {baseDir}/../../core/wiki_image.py "<景点名称>"
 ```
 
 ## Output
@@ -64,7 +70,7 @@ python {baseDir}/../core/wiki_image.py "<景点名称>"
 使用 `core/wiki_image.py` 获取图片，速度快、URL 稳定。
 
 ```bash
-python {baseDir}/../core/wiki_image.py "<景点名称>"
+python {baseDir}/../../core/wiki_image.py "<景点名称>"
 ```
 
 - 返回 `image_url` 直链，用 `message` 工具发送
@@ -90,5 +96,10 @@ python {baseDir}/../core/wiki_image.py "<景点名称>"
 - 这条规则不强制每次都搜图，但如果搜了就必须发
 
 ## Constraints
-- 所有路线数据基于模拟数据集
+- 路线数据默认来自高德路径规划，失败降级本地示例路线（看 `data_source`）
 - 不收集真实位置信息
+
+## 坑与降级
+- **`--origin` / `--destination` 必填**；地名解析不出来会降级到本地示例路线，此时时间与票价只是示例值，**必须说明**，禁止当实测报。
+- 单纯 A→B 才走这里；用户要把一天里几个地方串起来，交给 `scheduler`（它自带出行时间矩阵与顺序优化）。
+- 纯路线规划不配图，只有推荐景点目的地时才用 `wiki_image.py`。

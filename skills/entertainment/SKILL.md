@@ -1,6 +1,6 @@
 ---
 name: entertainment
-description: 本地休闲娱乐推荐 - 电影、展览、活动等
+description: 本地休闲娱乐推荐——电影、展览、演出、景点、周末活动，默认取高德实时 POI，失败降级本地示例数据。触发场景：① 用户提到电影、展览、演出、活动、景点、周末、好玩、放松、无聊、约会、带孩子去哪；② 用户对上一批推荐说换一个/就去这个/上次那个。吃饭归 food-finder，多个地点排时间线归 scheduler。
 metadata: {"openclaw":{"emoji":"🎭","requires":{"bins":["python3"]}}}
 ---
 
@@ -11,6 +11,12 @@ metadata: {"openclaw":{"emoji":"🎭","requires":{"bins":["python3"]}}}
 
 ## Trigger
 当用户提到：电影、展览、演出、活动、周末、好玩、放松、无聊、约会等娱乐相关关键词时触发。
+
+## ⚠️ 数据真实性硬约束
+脚本**默认调高德实时数据**，失败才降级本地示例数据，返回体里的 `data_source` 就是这次数据的出处：
+- `amap` → 真实数据，可以直接当真店/真活动/真路线报给用户
+- `mock`（entertainment 还可能是 `mixed`，即两种混在一起）→ 含本地示例数据，**必须在回复里说明这是示例数据**，禁止说成「附近真有这家」
+名称、地址、价格、评分、营业时间、路线时间与费用**一律照抄脚本输出**：禁止自己编、禁止补全脚本没给的字段、禁止把数字润色成整数。搜不到就说搜不到，不要拿印象里的店名凑数。
 
 ## Input Parameters
 - `interest` (string, optional): 兴趣类型 (movie/exhibition/concert/sports/outdoor)
@@ -35,7 +41,7 @@ python {baseDir}/scripts/find_events.py --visit "<event_name>" --visit_rating 4.
 python {baseDir}/scripts/find_events.py --recall
 
 # 获取景点/场所的 Wikipedia 图片和简介
-python {baseDir}/../core/wiki_image.py "<景点名称>"
+python {baseDir}/../../core/wiki_image.py "<景点名称>"
 ```
 
 ## Output
@@ -66,7 +72,7 @@ python {baseDir}/../core/wiki_image.py "<景点名称>"
 使用 `core/wiki_image.py` 获取图片，速度快、图片质量高、URL 稳定。
 
 ```bash
-python {baseDir}/../core/wiki_image.py "<景点名称>"
+python {baseDir}/../../core/wiki_image.py "<景点名称>"
 ```
 
 输出包含：`image_url`（直链）、`summary`（简介）、`wiki_url`（页面链接）。
@@ -98,6 +104,12 @@ python {baseDir}/../core/wiki_image.py "<景点名称>"
 - 这条规则不强制每次都搜图，但如果搜了就必须发
 
 ## Constraints
-- 所有活动数据来自模拟数据集
+- 活动数据默认来自高德实时 POI，失败降级本地示例数据（看 `data_source`：`amap` / `mixed` / `mock`）
 - 不收集任何真实用户信息
 - **微信 emoji 约束：** 禁止 📆 🔢（带数字），日程/时间统一用 📅 📋 🕐 ⏰ 📌
+
+## 坑与降级
+- **`data_source` 会出现 `mixed`**：一批结果里既有高德实时的、也有本地示例的，此时**按含示例数据口径说**，不要笼统说「这些都是查到的真实活动」。
+- 电影/具体演出这类没有 POI 的条目本来就来自本地数据集，票价与场次是示例值，不能当今日实际排片报。
+- `wiki_image.py` 返回 `found: false` 才走 web_search 兜底；两条都空就跳过配图，不要向用户解释「没找到图」。
+- 偏好与历史与 food-finder / review 共用 `core/memory.py`。

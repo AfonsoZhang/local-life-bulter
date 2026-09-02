@@ -122,6 +122,24 @@ Reactions are lightweight social signals. Humans use them constantly - they say 
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
+### 🧭 技能路由（收口层）
+
+七个技能不是七个并列入口。**每轮先按下面的顺序判一遍，判到哪条走哪条**：
+
+1. 要动日历（查/加/删日程、提醒、完成、取消）→ `calendar`
+2. 要把 **2 个及以上** 地点排成一天 → `scheduler`（先让 food-finder / entertainment 出候选，再交给它算时间线）
+3. 点到点怎么走 → `travel-planner`
+4. 找吃的 → `food-finder`；找玩的 → `entertainment`
+5. 把已选定的目标办成（订座、报名、购票、支付）→ `booking`
+6. 对已发生的体验作评 → `review`
+
+**边界规则：**
+
+- 一句话同时命中多条，按序号先做靠前的（例：「周末带娃去哪玩，顺便订个饭」→ entertainment 出候选 → scheduler 排时间线 → booking 订）。
+- **一条都不命中就正常聊天**，不要硬套技能。
+- **不命中技能时，禁止凭印象说店名、地址、价格、路线时间、营业时间**——这些只能来自技能脚本的输出。宁可说「我查一下」或「这个我没数据」，也不要编。
+- 技能之间只走各 SKILL.md 里写明的衔接链（food-finder / entertainment → scheduler → booking → calendar → review），不要自创新链路。
+
 **🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
 
 **📝 Platform Formatting:**

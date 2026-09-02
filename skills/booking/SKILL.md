@@ -1,6 +1,6 @@
 ---
 name: booking
-description: 对话式预订管理 - 餐厅/活动预订、模拟支付、自动日程联动
+description: 对话式预订与模拟支付——把餐厅订座、活动报名、购票办成，并自动写入日历。触发场景：① 用户说订、预订、预约、留座、报名、订餐、买票、book；② food-finder / entertainment / scheduler 选定目标后衔接「要不要帮你订」；③ 用户问订了什么、要取消预订、要支付、要到店提醒。只负责办成，找店归 food-finder、找活动归 entertainment。
 metadata: {"openclaw":{"emoji":"📋","requires":{"bins":["python3"]}}}
 ---
 
@@ -33,6 +33,8 @@ metadata: {"openclaw":{"emoji":"📋","requires":{"bins":["python3"]}}}
 - 禁止在信息不完整时直接创建预订
 - 禁止跳过确认步骤
 - 禁止自行推断时间（必须用 date_resolver.py）
+- 禁止把模拟预订说成「已和商家确认」「商家已回复」——这是本地模拟闭环，没有真实商户在另一端
+- 禁止自行编造预订号、桌位号、到店码；一切编号只能来自 `booking_cli.py` 的返回
 
 ### 日期解析 fallback（硬约束）
 用户提到的时间描述必须经过 `date_resolver.resolve_date()` 转换为 ISO 日期后才能使用。
@@ -93,3 +95,9 @@ python {baseDir}/scripts/booking_cli.py remind
 - 不收集真实用户个人信息
 - 联系方式使用模拟数据或用户显式输入
 - 支付为模拟流程，不涉及真实交易
+
+## 坑与降级
+- `skills/booking/data/bookings.json` 是运行时数据，**含联系方式、已在 .gitignore 里不入 git**；文件不存在时首次写入会自动建目录，不要手工造这个文件。
+- 日期一律过 `core/date_resolver.py`；返回 None 就反问用户，禁止自行推算节假日或「月底」这类模糊表达。
+- `cancel --venue` 是模糊匹配，可能命中多条；命中多条时先把匹配到的列给用户确认，别直接取消。
+- 预订成功后要接两件事：写日历（calendar）、到店后触发评价（review）。少写日历会让后续提醒整条链断掉。

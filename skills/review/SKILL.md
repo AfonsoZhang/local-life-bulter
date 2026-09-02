@@ -1,6 +1,6 @@
 ---
 name: review
-description: 对话式评价系统 - 用自然语言替代传统打分+写评论的 UI
+description: 对话式评价——用户随口一句话即完成评价并回灌偏好，取代打星加写长评的表单。触发场景：① 用户主动点评（上次那家不错、烧烤太咸了、昨天的电影一般）；② 预订标记完成后主动问一次体验；③ 心跳任务发现有待评价的已完成预订。禁止让用户打 1–5 星或写长评。
 metadata: {"openclaw":{"emoji":"💬","requires":{"bins":["python3"]}}}
 ---
 
@@ -31,6 +31,7 @@ metadata: {"openclaw":{"emoji":"💬","requires":{"bins":["python3"]}}}
 - 禁止要求用户打1-5星（这是传统App的交互方式）
 - 禁止要求用户写长评（简短对话就够了）
 - 禁止同一次体验反复追问
+- 禁止替用户编造评价内容或情感倾向：只记录用户真说过的话，说不清就记中性，不要脑补「他应该挺满意」
 
 ## Script
 ```bash
@@ -85,3 +86,9 @@ python {baseDir}/scripts/review_cli.py impact
 - 不收集真实用户信息
 - 评价数据仅用于本地偏好学习
 - 保留最近 200 条评价记录
+
+## 坑与降级
+- `skills/review/data/reviews.json` 是运行时数据、不入 git，首次运行自动创建。
+- `pending` 读的是 booking 里 status=complete 且未评价的记录（`get_completed_without_review()`）：booking 数据为空时 pending 就是空的，**这不是 bug**，不要因此去别处找待评价项。
+- 带 `--booking_id` 记录评价会顺带把那条预订标记为已评价（`mark_reviewed`）；不带就只有评价、预订会被反复问。
+- 评价直接改写 `core/memory.py` 里的共享偏好，会立刻影响 food-finder / entertainment 的下一次推荐——记错了要当场用一条相反的评价纠正，别放着。
