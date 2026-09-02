@@ -114,7 +114,7 @@ local-life-butler/
 │   └── scheduler/         # 🧭 智能行程编排（schedule_cli.py）
 │                          # 每个 SKILL.md 含：路由化 description / 硬约束 / 坑与降级
 ├── tools/                 # 规范闸门（check_skills.py + 装 pre-commit 的脚本）
-├── .github/workflows/     # CI：skills-gate（静态校验）+ Claude Code（@claude 触发）
+├── .github/workflows/     # CI：SKILL.md 规范与文档-代码一致性校验
 └── config/                # 用户侧数据（本地存储 / 用户显式输入）
     ├── preferences.json   # 用户偏好（模拟 + 学习）
     ├── history.json       # 交互历史 + 访问记录
