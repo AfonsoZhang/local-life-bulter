@@ -40,6 +40,8 @@ class CalendarEvent:
     reminder_min: int = 30     # 提前提醒（分钟）
     created_at: str = ""
     all_day: bool = False
+    status: str = "pending"    # pending / done / cancelled
+    reminded_at: str = ""      # 已提醒时间戳（ISO），空=尚未提醒
 
 
 # ── 存储 ──────────────────────────────────────────────
@@ -263,6 +265,7 @@ def list_events(
     start_date: str = "",
     end_date: str = "",
     tags: List[str] = None,
+    include_done: bool = False,
 ) -> List[Dict]:
     """查询日程
 
@@ -271,6 +274,7 @@ def list_events(
         start_date: 起始日期（ISO格式，优先于 days_ahead）
         end_date: 结束日期（ISO格式）
         tags: 按标签过滤
+        include_done: 是否包含已完成/已取消的日程（默认 False，隐藏）
 
     Returns:
         日程列表，按时间排序
@@ -290,6 +294,10 @@ def list_events(
 
     result = []
     for e in events:
+        # 状态过滤：默认隐藏已完成/已取消
+        if not include_done and e.get("status", "pending") in ("done", "cancelled"):
+            continue
+
         try:
             event_start = datetime.fromisoformat(e["start_time"])
             event_end = datetime.fromisoformat(e["end_time"])
@@ -334,6 +342,83 @@ def update_event(event_id: str, **kwargs) -> Optional[Dict]:
             _save_calendar(events)
             return e
     return None
+
+
+def complete_event(event_id: str) -> Optional[Dict]:
+    """标记日程为已完成（保留历史，不删除）。
+
+    已完成的日程不再出现在 list/today 默认视图，也不会再触发提醒。
+    """
+    events = _load_calendar()
+    for e in events:
+        if e.get("id") == event_id:
+            e["status"] = "done"
+            e.setdefault("reminded_at", "")
+            _save_calendar(events)
+            return e
+    return None
+
+
+def mark_reminded(event_id: str) -> bool:
+    """记录某日程已提醒（写入 reminded_at），用于去重，避免重复打扰。"""
+    events = _load_calendar()
+    for e in events:
+        if e.get("id") == event_id:
+            e["reminded_at"] = datetime.now().isoformat()
+            _save_calendar(events)
+            return True
+    return False
+
+
+def due_reminders(mark: bool = False) -> List[Dict]:
+    """返回当前到期、应当提醒的日程。
+
+    判定（确定性，不依赖 LLM 主观判断）：
+      - status == pending（未完成、未取消）
+      - reminded_at 为空（尚未提醒过 → 去重）
+      - 已进入提醒窗口：now >= start_time - reminder_min
+      - 事件尚未结束：now < end_time（避免对早已过去的事件补提醒）
+
+    Args:
+        mark: 为 True 时，把返回的日程就地标记为已提醒（写 reminded_at），
+              保证每个日程至多提醒一次。
+
+    Returns:
+        到期日程列表，按开始时间排序。
+    """
+    events = _load_calendar()
+    now = datetime.now()
+    due = []
+
+    for e in events:
+        if e.get("status", "pending") != "pending":
+            continue
+        if e.get("reminded_at"):
+            continue
+        try:
+            start = datetime.fromisoformat(e["start_time"])
+            end = datetime.fromisoformat(e["end_time"])
+        except (ValueError, KeyError):
+            continue
+
+        reminder_min = e.get("reminder_min", 30)
+        window_open = start - timedelta(minutes=reminder_min)
+        if window_open <= now < end:
+            due.append(e)
+
+    due.sort(key=lambda x: x.get("start_time", ""))
+
+    if mark and due:
+        stamp = now.isoformat()
+        due_ids = {e["id"] for e in due}
+        for e in events:
+            if e.get("id") in due_ids:
+                e["reminded_at"] = stamp
+        _save_calendar(events)
+        for e in due:
+            e["reminded_at"] = stamp
+
+    return due
 
 
 # ── 冲突检测 ──────────────────────────────────────────────

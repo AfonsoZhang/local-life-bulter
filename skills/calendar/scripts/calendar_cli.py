@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, "core"))
 
 from cal_manager import (
     add_event, list_events, delete_event, update_event,
+    complete_event, due_reminders,
     check_conflict, find_free_slots, parse_and_add,
     import_ical_file, format_events, format_free_slots,
     format_conflict_info, format_event,
@@ -218,6 +219,78 @@ def cmd_cancel(args):
         print(json.dumps(deleted, ensure_ascii=False, indent=2))
 
 
+def cmd_complete(args):
+    """标记日程为已完成 — 关键词模糊匹配，无需 event_id。
+
+    与 cancel 不同：完成是保留历史的状态变更（status=done），
+    不删除数据，且完成后不再触发提醒。
+    """
+    events = _load_calendar()
+    active = [e for e in events if e.get("status", "pending") == "pending"]
+    if not active:
+        print("📋 当前没有待办日程")
+        return
+
+    keyword = (args.match or "").strip()
+    matched = []
+
+    if args.next:
+        # 完成最近一个未来（或进行中）的日程
+        now = datetime.now().isoformat()
+        upcoming = [e for e in active if e.get("end_time", "") >= now]
+        if upcoming:
+            upcoming.sort(key=lambda x: x.get("start_time", ""))
+            matched = [upcoming[0]]
+    elif args.today:
+        today = datetime.now().strftime("%Y-%m-%d")
+        matched = [e for e in active if e.get("start_time", "").startswith(today)]
+    elif keyword:
+        kw = keyword.lower()
+        matched = [e for e in active
+                   if kw in e.get("title", "").lower()
+                   or kw in e.get("location", "").lower()
+                   or kw in e.get("description", "").lower()]
+
+    if not matched:
+        if keyword:
+            print(f"❌ 没找到包含「{keyword}」的待办日程")
+        else:
+            print("❌ 没有匹配的待办日程")
+        sys.exit(1)
+
+    completed = []
+    for e in matched:
+        result = complete_event(e["id"])
+        if result:
+            completed.append(result)
+
+    if len(completed) == 1:
+        e = completed[0]
+        try:
+            start = datetime.fromisoformat(e["start_time"])
+            time_str = start.strftime("%m月%d日 %H:%M")
+        except (ValueError, KeyError):
+            time_str = ""
+        print(f"✅ 已完成：{e['title']}" + (f"（{time_str}）" if time_str else ""))
+    else:
+        print(f"✅ 已完成 {len(completed)} 个日程：")
+        for e in completed:
+            print(f"  · {e['title']}")
+
+    if args.json:
+        print(json.dumps(completed, ensure_ascii=False, indent=2))
+
+
+def cmd_due(args):
+    """输出当前到期、应当提醒的日程（供定时提醒任务调用）。
+
+    默认会把返回的日程标记为已提醒，确保每个日程至多提醒一次；
+    用 --peek 可只查看不标记。无到期日程时输出空数组 []。
+    """
+    due = due_reminders(mark=not args.peek)
+    print(json.dumps(due, ensure_ascii=False, indent=2))
+
+
 def main():
     parser = argparse.ArgumentParser(description="日历 CLI 工具")
     parser.add_argument("--json", action="store_true", help="输出 JSON 格式")
@@ -269,6 +342,16 @@ def main():
     p_cancel.add_argument("--today", action="store_true", help="取消今天所有日程")
     p_cancel.add_argument("--next", action="store_true", help="取消最近一个未来日程")
 
+    # complete
+    p_done = sub.add_parser("complete", help="标记日程已完成（模糊匹配，保留历史、不再提醒）")
+    p_done.add_argument("match", nargs="?", default="", help="匹配关键词，如 '体检'、'还书'")
+    p_done.add_argument("--today", action="store_true", help="完成今天所有日程")
+    p_done.add_argument("--next", action="store_true", help="完成最近一个待办日程")
+
+    # due
+    p_due = sub.add_parser("due", help="输出当前到期应提醒的日程（默认标记已提醒）")
+    p_due.add_argument("--peek", action="store_true", help="只查看不标记已提醒")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -286,6 +369,8 @@ def main():
         "check": cmd_check,
         "import": cmd_import,
         "cancel": cmd_cancel,
+        "complete": cmd_complete,
+        "due": cmd_due,
     }
     cmd_map[args.command](args)
 

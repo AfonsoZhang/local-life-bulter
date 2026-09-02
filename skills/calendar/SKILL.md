@@ -1,6 +1,6 @@
 ---
 name: calendar
-description: 日历日程管理 - 查询、添加、删除日程，冲突检测，空闲时段查询
+description: 日历日程的增删改查、冲突检测、空闲时段与到期提醒，唯一入口是 calendar_cli.py。触发场景：① 用户提到日程、日历、安排、提醒、空闲、忙不忙、有没有事、几点有空；② 用户说某件事完成了/做完了（complete）或不办了/取消（cancel）；③ 定时任务取当前到期日程（due）。多地点行程编排归 scheduler，预订本身归 booking。
 metadata: {"openclaw":{"emoji":"📅","requires":{"bins":["python3"]}}}
 ---
 
@@ -64,11 +64,20 @@ python {baseDir}/scripts/calendar_cli.py check "2026-05-26T15:00:00" "2026-05-26
 # 导入 iCal 文件
 python {baseDir}/scripts/calendar_cli.py import /path/to/file.ics
 
-# 智能取消日程（模糊匹配，无需 event_id）
+# 标记完成日程（模糊匹配，无需 event_id）—— 保留历史、不再提醒，且从 list 默认隐藏
+python {baseDir}/scripts/calendar_cli.py complete "体检"    # 匹配标题/地点/描述含「体检」的待办
+python {baseDir}/scripts/calendar_cli.py complete --next   # 完成最近一个待办日程
+python {baseDir}/scripts/calendar_cli.py complete --today  # 完成今天所有日程
+
+# 智能取消日程（模糊匹配，无需 event_id）—— 删除事件（用于"不办了/不去了"）
 python {baseDir}/scripts/calendar_cli.py cancel "医院"      # 匹配标题/地点/描述含「医院」的日程
 python {baseDir}/scripts/calendar_cli.py cancel "开会"      # 匹配含「开会」的日程
 python {baseDir}/scripts/calendar_cli.py cancel --next    # 取消最近一个未来日程
 python {baseDir}/scripts/calendar_cli.py cancel --today   # 取消今天所有日程
+
+# 查询当前到期、应提醒的日程（供定时提醒任务调用；已自动去重+过滤已完成）
+python {baseDir}/scripts/calendar_cli.py due             # 返回到期日程 JSON 数组，并标记为已提醒
+python {baseDir}/scripts/calendar_cli.py due --peek      # 只查看不标记（调试用）
 
 # 输出 JSON 格式（方便程序处理）
 python {baseDir}/scripts/calendar_cli.py --json today
@@ -94,18 +103,29 @@ python {baseDir}/scripts/calendar_cli.py --json list --days 3
 
 `calendar_cli.py add` 输出 JSON 格式，含 `event_id`。**只有工具返回 `ok=true` 且有 `event_id` 时，才能回复"已创建"。禁止在工具返回前确认。**
 
-## ⚠️ 日程取消约束（硬约束）
+## ⚠️ 日程完成 / 取消约束（硬约束）
 
-当用户表达完成/取消意图时（如"完成了"、"做完了"、"搞定了"、"不用了"、"取消"、"已经xxx了"等），**立即执行 cancel 命令，不要反问**：
+用户表达"完成"或"取消"意图时，**立即执行对应命令，不要反问**。先区分意图再选命令：
 
+**① 完成（做完了 → 用 `complete`，标记完成、保留历史、不再提醒）**
+触发词："完成了"、"做完了"、"搞定了"、"弄好了"、"已经xxx了"等。
+```bash
+python {baseDir}/scripts/calendar_cli.py complete "<关键词>"
+```
+- 简短确认："已完成 ✅"
+
+**② 取消（不办了 → 用 `cancel`，删除事件）**
+触发词："不用了"、"取消"、"不去了"、"算了"、"删掉"等。
 ```bash
 python {baseDir}/scripts/calendar_cli.py cancel "<关键词>"
 ```
-
-- 关键词来自用户原话（如"医院检查做完了" → 关键词"医院"）
-- 如果无法确定关键词，用 `cancel --next` 取消最近一个日程
 - 简短确认："已取消 ✅"
-- **禁止：** 反问用户"要取消哪个"、"确认取消吗"。直接做。
+
+**通用规则：**
+- 关键词来自用户原话（如"医院检查做完了" → 关键词"医院"，用 complete）
+- 如果无法确定关键词，用 `--next`（如 `complete --next` / `cancel --next`）
+- **禁止：** 反问用户"要哪个"、"确认吗"。直接做。
+- **为什么分开：** complete 保留记录、可后续评价，且让"已完成"的事不再被定时任务反复提醒；cancel 是彻底删除。两者都会让该事件从提醒中消失。
 
 ## ⚠️ 日程创建防幻觉（硬约束）
 
@@ -166,3 +186,9 @@ python {baseDir}/scripts/broadcast.py weather-check
 - 调用脚本后，将输出**原样发送**给用户，不要添加、修改、省略任何内容
 - alert/booking/review/weather-check 无输出时，表示没有需要提醒的内容，不要发送任何消息
 - 脚本内部已处理：天气获取、日程查询、预订检查、emoji 分配、格式统一
+
+## 坑与降级
+- **`complete` 与 `cancel` 不是一回事**：做完了用 `complete`（保留历史、不再提醒、从 list 默认隐藏），不办了用 `cancel`（删事件）。用错会把用户的历史抹掉。
+- **`due` 有副作用**：它会把取到的日程标记为已提醒，调试一律用 `due --peek`，否则这条提醒就被吃掉了、真到点不再播报。
+- 数据真源是 `core/cal_manager.py`，**禁止手改 JSON**；`add` 必须拿到 `ok=true` 且有 `event_id` 才能回「已创建」。
+- 改完 `dashboard/app.py` 要按 CLAUDE.md 重启服务，否则页面还是旧数据。

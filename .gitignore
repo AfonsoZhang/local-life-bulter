@@ -26,3 +26,11 @@ CLAUDE.md
 
 # 空白人设模板，与管家提交无关（未被任何文档引用）
 IDENTITY.md
+
+# 本地专属：MCP 服务与演示脚本（有意只留本地，不进提交）
+mcp_server.py
+DEMO.md
+
+# 运行时业务数据 —— 含真实联系方式/PII，绝不提交（仓库里保留干净 demo 版）
+skills/booking/data/bookings.json
+skills/review/data/reviews.json
