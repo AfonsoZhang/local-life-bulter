@@ -221,7 +221,7 @@ local-life-butler/
 │   └── jobs.example.json  # 全天候定时服务注册示例（脱敏）
 ├── dashboard/
 │   └── app.py             # Flask 可视化面板
-└── config/                # 全部为模拟数据
+└── config/                # 用户侧数据（本地存储，运行时数据不入库）
     └── *.example.json     # 示例配置（真实运行数据 gitignore 不入库）
 ```
 

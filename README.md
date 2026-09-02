@@ -94,7 +94,7 @@ python core/memory.py summary
 local-life-butler/
 ├── README.md              # 项目说明（本文件）
 ├── DESIGN.md              # 设计文档（架构/技术亮点）
-├── AGENTS.md              # 运行时约束位置说明（指针）
+├── AGENTS.md              # 运行时约束 + 技能路由收口层
 ├── core/                  # 共享模块（不含 LLM，纯工具/算法）
 │   ├── amap_api.py        # 高德地图（POI/路线/地理编码/天气/IP定位）
 │   ├── memory.py          # 记忆模块（历史/偏好/时间衰减/场景化）
@@ -114,13 +114,38 @@ local-life-butler/
 │   ├── calendar/          # 📅 日程管理 + 播报
 │   ├── review/            # 💬 对话式评价
 │   └── scheduler/         # 🧭 智能行程编排（schedule_cli.py）
-└── config/                # 全部为模拟数据 / 用户显式输入
+│                          # 每个 SKILL.md 含：路由化 description / 硬约束 / 坑与降级
+├── tools/                 # 规范闸门（check_skills.py + 装 pre-commit 的脚本）
+├── .github/workflows/     # CI：skills-gate（静态校验）+ Claude Code（@claude 触发）
+└── config/                # 用户侧数据（本地存储 / 用户显式输入）
     ├── preferences.json   # 用户偏好（模拟 + 学习）
     ├── history.json       # 交互历史 + 访问记录
     ├── calendar.json      # 日程数据
     ├── amap_config.json   # 高德 API Key
     └── session_state.json # 多轮对话上下文
 ```
+
+## 🚦 技能规范与闸门
+
+7 个 SKILL.md 是管家唯一的操作依据——它写错一条命令，管家就会照错的调一整轮。所以规范不靠自觉，靠一道机械闸门 `tools/check_skills.py`（纯静态校验，不调模型）：
+
+| 规则 | 拦什么 |
+|---|---|
+| R1 | frontmatter 完整、`name` 与目录一致、`metadata` 是合法 JSON |
+| R2 | `description` 必须写明触发场景——它是唯一常驻上下文的部分，正文命中后才加载 |
+| R3 | 必须有硬约束段和「坑与降级」段 |
+| R4/R5 | **文档写的脚本必须存在，写的子命令和 `--flag` 必须真在脚本源码里** |
+| R6 | 不许引用不存在的技能 |
+| R7 | `AGENTS.md` 的路由收口层必须覆盖全部技能 |
+
+R4/R5 是核心：它抓的是文档与代码的漂移。上线时这道闸门当场抓出 3 处真实故障——两个技能的 `wiki_image.py` 路径少写一层（指向不存在的 `skills/core/`）、`plan_route.py` 的 `--time` 参数压根不存在（照文档跑直接 argparse 报错退出）。
+
+```bash
+python3 tools/check_skills.py     # 手动跑
+bash tools/install_hooks.sh       # 装成 pre-commit，提交前自动拦
+```
+
+CI 上同样跑（`.github/workflows/skills-gate.yml`），8 秒出结果。
 
 ## 🔗 交叉联动架构
 
@@ -202,15 +227,18 @@ local-life-butler/
 
 ## ⚠️ 数据说明
 
-本项目所有数据均为**模拟数据**，不包含任何真实用户信息。
-用于展示对话式本地生活服务的交互范式。
+**不包含任何真实用户信息**：偏好、历史、日程、预订、评价全部是本地数据或用户自己输入的内容，运行时数据不入库。
+
+**外部数据默认是实时的**：餐厅、活动、路线取高德地图接口，API 不可用时自动降级到本地示例数据集。每次返回都带 `data_source` 字段标明本次来源（`amap` / `mixed` / `mock`），格式化输出里也会直接印出来——mock 时管家必须声明是示例数据，不会把示例店说成真店。
+
+**预订与支付是模拟闭环**，不对接真实商户、不涉及真实交易。
 
 ## 📝 技术栈
 
 - **框架**: OpenClaw 2026.5.20（Agent 运行时 + Cron 调度 + IM 路由）
 - **技能**: 7 个，遵循 OpenClaw 插件规范（SKILL.md + 实现代码）
 - **脚本**: Python 3
-- **数据**: JSON 模拟数据（不含任何真实用户信息）
+- **数据**: 外部 POI/路线取高德实时接口、失败降级本地 JSON 示例集；用户侧数据全部本地存储，不含真实用户信息
 - **交互**: IM 对话（微信为主，兼容 Telegram/Discord）
 
 ---
